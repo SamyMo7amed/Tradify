@@ -199,7 +199,12 @@ namespace Tradify.Core.Features.Order.Commands.Handler
                 }
 
                 order.subOrders = subOrdersList;
-
+                foreach (var cartProduct in Cart.CartProducts.ToList())
+                {
+               await   cartProductService.DeleteAsync(cartProduct);
+                }
+                Cart.CartProducts = null;
+             
                 // Calculate Total Amount from Order Items
                 order.ShippingPrice = request.ShippingPrice ?? 0;
 
