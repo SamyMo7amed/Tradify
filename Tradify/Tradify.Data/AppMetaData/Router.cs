@@ -21,7 +21,9 @@ namespace Tradify.Data.AppMetaData
             public const string GetByID = prefix +"/Get"+SignleRoute;
             public const string Delete = prefix + "/Delete" + SignleRoute;
             public const string GetUserByToken = prefix + "/GetUserByToken";
+            public const string CurrentUser = prefix + "/CurrentUser";
 
+            
         }
         public static class Authentication
         {

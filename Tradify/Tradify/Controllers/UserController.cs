@@ -1,7 +1,9 @@
 ﻿
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tradify.Bases;
+using Tradify.Core.Features.Seller.Command.Models;
 using Tradify.Core.Features.User.Commands.Models;
 using Tradify.Core.Features.User.Queries.Models;
 using Tradify.Core.Features.User.Queries.Results;
@@ -56,6 +58,16 @@ namespace Tradify.Controllers
             return Ok(resutl);
         }
 
+        [HttpGet(Router.UserRouter.CurrentUser)]
+
+
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var result = await Mediator.Send(new GetUserByTokenCommand());
+            return NewResult(result);
+        }
+    }
+
 
     }
-}
+

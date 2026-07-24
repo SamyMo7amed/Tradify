@@ -13,6 +13,8 @@ using Tradify.Core.Features.User.Commands.Models;
 using Tradify.Core.Resources.Service;
 using Tradify.Data.Entities;
 using Tradify.Data.Enums;
+using Tradify.Data.Helpers;
+using Tradify.Data.Helpers.Results;
 using Tradify.Infrastructure.AbstractsRepositories;
 using Tradify.Service.AbstractsServices;
 using Tradify.Service.AbstractsServices.AuthorizationServices;
@@ -27,6 +29,8 @@ namespace Tradify.Core.Features.Seller.Command.Handlers
                                                       , IRequestHandler<UpdateSellerCommand, Response<string>>
                                                       , IRequestHandler<ActiveSellerCommand, Response<string>>
                                                       , IRequestHandler<DisActiveSellerCommand, Response<string>>
+                                                      , IRequestHandler<GetUserByTokenCommand, Response<CurrentUserResponse>>
+
 
 
 
@@ -40,6 +44,7 @@ namespace Tradify.Core.Features.Seller.Command.Handlers
         private readonly IUserService userService;
         private readonly UserManager<Data.Entities.Identity.User> userManager;
         private readonly ICurrentUserService currentUserService;
+        private readonly IInstructorsService instructorsService;
 
         #endregion
 
@@ -51,7 +56,7 @@ namespace Tradify.Core.Features.Seller.Command.Handlers
             , UserManager<Data.Entities.Identity.User> userManager
             , IUserService userService
             , ICurrentUserService currentUserService
-            ) : base(localization)
+            ,IInstructorsService instructorsService) : base(localization)
         {
             this.localize = localization;
             this.sellerService = sellerService;
@@ -60,6 +65,7 @@ namespace Tradify.Core.Features.Seller.Command.Handlers
             this.userService = userService;
             this.userManager = userManager;
             this.currentUserService = currentUserService;
+            this.instructorsService = instructorsService;
         }
 
 
@@ -198,6 +204,59 @@ namespace Tradify.Core.Features.Seller.Command.Handlers
 
             return Success<string>(localize.Get("SellerActiveSuccessfully"));
         }
+
+
+
+    
+
+            public async Task<Response<CurrentUserResponse>> Handle(GetUserByTokenCommand request,CancellationToken cancellationToken)
+            {
+                    int? sellerId = null;
+                    int? instructorId = null;
+            var userId = currentUserService.GetUserId();
+
+           
+                var user = await userManager.Users
+                                .FirstOrDefaultAsync(x => x.Id == userId);
+
+                if (user == null)
+                return NotFound<CurrentUserResponse>(localize.Get("UserNotFound"));
+
+
+            var role = (await userManager.GetRolesAsync(user)).FirstOrDefault();
+
+            if (role == RolesHelper.Seller)
+            {
+                var seller = await sellerService.GetTableNoTracking().FirstOrDefaultAsync(s => s.UserId == userId);
+
+                if (seller == null)
+                    return NotFound<CurrentUserResponse>(localize.Get("SellerNotFound"));
+                sellerId = seller.Id;
+            }
+
+
+            if (role == RolesHelper.Instructor)
+            {
+                var instructor = await instructorsService.GetTableNoTracking().FirstOrDefaultAsync(s => s.UserId == userId);
+
+                if (instructor == null)
+                    return NotFound<CurrentUserResponse>(localize.Get("InstructorNotFound"));
+
+                instructorId = instructor.Id;
+
+            }
+
+            var result = new CurrentUserResponse
+            {
+                UserId = user.Id,
+                Role = role,
+                SellerId = sellerId,
+                InstructorId = instructorId
+            };
+
+            return Success(result);
+        }
+        
 
 
         #endregion
